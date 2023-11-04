@@ -22,16 +22,41 @@ namespace back_end.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(_context.Products.ToList());
+            var products = _context.Products.ToList();
+            return Ok(new { message = "success", products });
         }
 
-        [HttpPost]
-        public IActionResult Post([FromBody] Product product)
-        {
-            _context.Products.Add(product);
-            _context.SaveChanges();
 
-            return Ok();
+        [HttpGet("product-detail/{id}")]
+        public async Task<IActionResult> FindProduct(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new { message = "success", product });
+        }
+
+        [HttpPost("{id}/add-to-cart")]
+        public async Task<IActionResult> AddToCart(int id, [FromBody] Cart cart)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var addCart = new Cart
+            {
+                Quantity = cart.Quantity,
+            };
+
+            _context.Carts.Add(addCart);
+            await _context.SaveChangesAsync();
+            var products = _context.Products.ToList();
+            return Ok(new { message = "success", products });
         }
     }
 }

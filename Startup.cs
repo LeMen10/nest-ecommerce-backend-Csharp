@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
 
 namespace back_end
 {
@@ -21,11 +23,14 @@ namespace back_end
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var key = Configuration["Jwt:Key"];
+            var signinKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            //services.AddAuthentication(JwtBearerDefaults.AuthenticationSchme);
             services.AddCors(options =>
             {
                 options.AddPolicy("MyAllowSpecificOrigins", builder =>
                 {
-                    builder.WithOrigins("http://localhost:3000")
+                    builder.WithOrigins("http://localhost:3000", "http://localhost:3001")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                 });
@@ -54,6 +59,8 @@ namespace back_end
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "web_api v1"));
             }
+
+            app.UseStaticFiles();
 
             app.UseRouting();
 
