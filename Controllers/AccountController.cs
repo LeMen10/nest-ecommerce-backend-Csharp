@@ -1,10 +1,15 @@
 ﻿using back_end.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using BC = BCrypt.Net.BCrypt;
 
@@ -15,16 +20,25 @@ namespace back_end.Controllers
     public class AccountController : ControllerBase
     {
         public readonly web_apiContext _context;
+        IConfiguration config;
 
-        public AccountController(web_apiContext ctx)
+        public AccountController(web_apiContext ctx, IConfiguration config)
         {
             _context = ctx;
+            this.config = config;
         }
         [HttpGet]
         public IActionResult GetAll()
         {
             return Ok(_context.Users.ToList());
         }
+
+        [HttpGet("get-username")]
+        public IActionResult GetUserName()
+        {
+            return Ok(_context.Users.ToList());
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] User user)
         {
@@ -83,12 +97,27 @@ namespace back_end.Controllers
                 return NotFound();
             }
 
-            // kiểm tra mật khẩu
-            //bool ispasswordvalid = comparepassword(password, user.Password);
-
+            var key = config["Jwt:Key"];
+            var signinKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var signinCredential = new SigningCredentials(signinKey, SecurityAlgorithms.HmacSha256);
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.Username),
+            };
+            //tao token
+            var tokenSetUp = new JwtSecurityToken(
+                issuer:config["Jwt:Issuer"],
+                audience:config["Jwt:Audience"],
+                expires:DateTime.Now.AddDays(2),
+                signingCredentials:signinCredential,
+                claims:claims
+            );
+            //sinh ra token với các thông số ở trên
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(tokenSetUp);
 
             // Trả về kết quả thành công
-            return Ok("Đăng ký thành công");
+            return Ok(new { message = "success", accessToken });
+
         }
 
         //private bool authenticateuser(string username, string password)

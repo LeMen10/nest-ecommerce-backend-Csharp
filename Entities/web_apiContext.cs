@@ -8,8 +8,6 @@ namespace back_end.Entities
 {
     public partial class web_apiContext : DbContext
     {
-        internal object user;
-
         public web_apiContext()
         {
         }
@@ -40,19 +38,19 @@ namespace back_end.Entities
 
             modelBuilder.Entity<Cart>(entity =>
             {
-                entity.HasNoKey();
+                entity.Property(e => e.CartId).HasColumnName("CartID");
 
                 entity.Property(e => e.ProductId).HasColumnName("ProductID");
 
                 entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.HasOne(d => d.Product)
-                    .WithMany()
+                    .WithMany(p => p.Carts)
                     .HasForeignKey(d => d.ProductId)
                     .HasConstraintName("FK_Carts_Products");
 
                 entity.HasOne(d => d.User)
-                    .WithMany()
+                    .WithMany(p => p.Carts)
                     .HasForeignKey(d => d.UserId)
                     .HasConstraintName("FK_Carts_Users");
             });

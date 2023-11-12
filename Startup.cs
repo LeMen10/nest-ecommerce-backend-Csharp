@@ -1,4 +1,5 @@
-using back_end.Entities;
+﻿using back_end.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,25 @@ namespace back_end
         {
             var key = Configuration["Jwt:Key"];
             var signinKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-            //services.AddAuthentication(JwtBearerDefaults.AuthenticationSchme);
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    //Yêu cầu có kt issuer 
+                    ValidateIssuer = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    //Yêu cầu có kt về audience
+                    ValidateAudience = true,
+                    ValidAudience = Configuration["Jwt:Audience"],
+                    //Chỉ ra token phải cầu hình expire 
+                    //RequireExpirationTime = true,
+                    //ValidateLifetime = true,
+                    //Chỉ ra key mà sẽ dùng trong token sau này 
+                    IssuerSigningKey = signinKey,
+                    RequireSignedTokens = true
+                };
+            });
+
             services.AddCors(options =>
             {
                 options.AddPolicy("MyAllowSpecificOrigins", builder =>
@@ -59,6 +78,8 @@ namespace back_end
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "web_api v1"));
             }
+
+            app.UseAuthentication();
 
             app.UseStaticFiles();
 

@@ -9,6 +9,7 @@ namespace back_end.Entities
     {
         public User()
         {
+            Carts = new HashSet<Cart>();
             Orders = new HashSet<Order>();
         }
 
@@ -20,6 +21,7 @@ namespace back_end.Entities
         public string Rule { get; set; }
         public int UserId { get; set; }
 
+        public virtual ICollection<Cart> Carts { get; set; }
         public virtual ICollection<Order> Orders { get; set; }
     }
 }

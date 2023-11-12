@@ -1,6 +1,9 @@
 ﻿using back_end.Entities;
+using back_end.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +16,12 @@ namespace back_end.Controllers
     public class ProductController : ControllerBase
     {
         public readonly web_apiContext _context;
+        private readonly IConfiguration _config;
 
-        public ProductController(web_apiContext ctx)
+        public ProductController(web_apiContext ctx, IConfiguration config)
         {
             _context = ctx;
+            _config = config;
         }
 
         [HttpGet]
@@ -38,25 +43,6 @@ namespace back_end.Controllers
             }
 
             return Ok(new { message = "success", product });
-        }
-
-        [HttpPost("{id}/add-to-cart")]
-        public async Task<IActionResult> AddToCart(int id, [FromBody] Cart cart)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var addCart = new Cart
-            {
-                Quantity = cart.Quantity,
-            };
-
-            _context.Carts.Add(addCart);
-            await _context.SaveChangesAsync();
-            var products = _context.Products.ToList();
-            return Ok(new { message = "success", products });
         }
     }
 }
