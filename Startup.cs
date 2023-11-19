@@ -1,4 +1,5 @@
 ﻿using back_end.Entities;
+using dotenv.net;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -62,6 +63,8 @@ namespace back_end
                 //Connection string 
                 option.UseSqlServer(Configuration.GetConnectionString("web_api"));
             });
+
+            DotEnv.Load();
 
             services.AddSwaggerGen(c =>
             {

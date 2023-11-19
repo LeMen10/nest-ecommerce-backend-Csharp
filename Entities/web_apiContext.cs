@@ -18,6 +18,7 @@ namespace back_end.Entities
         }
 
         public virtual DbSet<Cart> Carts { get; set; }
+        public virtual DbSet<Category> Categories { get; set; }
         public virtual DbSet<Order> Orders { get; set; }
         public virtual DbSet<OrderDetail> OrderDetails { get; set; }
         public virtual DbSet<Product> Products { get; set; }
@@ -55,9 +56,24 @@ namespace back_end.Entities
                     .HasConstraintName("FK_Carts_Users");
             });
 
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
+
+                entity.Property(e => e.Cate).HasMaxLength(100);
+
+                entity.Property(e => e.Image).HasMaxLength(100);
+
+                entity.Property(e => e.Title).HasMaxLength(100);
+            });
+
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.Property(e => e.OrderId).HasColumnName("OrderID");
+
+                entity.Property(e => e.CreateDate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.FullName).HasMaxLength(50);
 
@@ -73,23 +89,25 @@ namespace back_end.Entities
 
             modelBuilder.Entity<OrderDetail>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToTable("OrderDetail");
 
+                entity.Property(e => e.OrderDetailId).HasColumnName("OrderDetailID");
+
                 entity.Property(e => e.OrderId).HasColumnName("OrderID");
+
+                entity.Property(e => e.PaymentStatus).HasMaxLength(100);
 
                 entity.Property(e => e.ProductId).HasColumnName("ProductID");
 
                 entity.Property(e => e.Status).HasMaxLength(100);
 
                 entity.HasOne(d => d.Order)
-                    .WithMany()
+                    .WithMany(p => p.OrderDetails)
                     .HasForeignKey(d => d.OrderId)
                     .HasConstraintName("FK_OrderDetail_Orders");
 
                 entity.HasOne(d => d.Product)
-                    .WithMany()
+                    .WithMany(p => p.OrderDetails)
                     .HasForeignKey(d => d.ProductId)
                     .HasConstraintName("FK_OrderDetail_Products");
             });
@@ -98,22 +116,32 @@ namespace back_end.Entities
             {
                 entity.Property(e => e.ProductId).HasColumnName("ProductID");
 
-                entity.Property(e => e.Category).HasMaxLength(50);
+                entity.Property(e => e.CategoryId).HasColumnName("CategoryID");
 
                 entity.Property(e => e.Detail).HasMaxLength(3000);
 
                 entity.Property(e => e.Image).HasMaxLength(50);
 
                 entity.Property(e => e.Title).HasMaxLength(200);
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.Products)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Products_Categories");
             });
 
             modelBuilder.Entity<User>(entity =>
             {
                 entity.Property(e => e.UserId).HasColumnName("UserID");
 
-                entity.Property(e => e.Address).HasMaxLength(200);
+                entity.Property(e => e.City).HasMaxLength(50);
+
+                entity.Property(e => e.District).HasMaxLength(50);
 
                 entity.Property(e => e.Email).HasMaxLength(50);
+
+                entity.Property(e => e.FullName).HasMaxLength(50);
 
                 entity.Property(e => e.Password)
                     .IsRequired()
@@ -123,9 +151,13 @@ namespace back_end.Entities
 
                 entity.Property(e => e.Rule).HasMaxLength(20);
 
+                entity.Property(e => e.SpecificAddress).HasMaxLength(500);
+
                 entity.Property(e => e.Username)
                     .IsRequired()
                     .HasMaxLength(20);
+
+                entity.Property(e => e.Ward).HasMaxLength(50);
             });
 
             OnModelCreatingPartial(modelBuilder);

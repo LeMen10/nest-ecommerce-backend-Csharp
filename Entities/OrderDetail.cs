@@ -12,6 +12,8 @@ namespace back_end.Entities
         public int? Quantity { get; set; }
         public string Status { get; set; }
         public int? Total { get; set; }
+        public int OrderDetailId { get; set; }
+        public string PaymentStatus { get; set; }
 
         public virtual Order Order { get; set; }
         public virtual Product Product { get; set; }

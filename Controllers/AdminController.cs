@@ -30,24 +30,21 @@ namespace back_end.Controllers
         [HttpPost("add-product")]
         public async Task<IActionResult> AddProduct([FromBody] Product product)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var addProduct = new Product
             {
                 Title = product.Title,
                 Price = product.Price,
                 Detail = product.Detail,
-                Category = product.Category,
+                CategoryId = product.CategoryId,
                 Image = "http://localhost:13395/image/" + product.Image, 
             };
 
             _context.Products.Add(addProduct);
             await _context.SaveChangesAsync();
             var products = _context.Products.ToList();
-            return Ok(new { message = "success", products});
+            return Ok(new { message = "success", products });
         }
 
         [HttpDelete("delete-product/{id}")]
@@ -80,19 +77,18 @@ namespace back_end.Controllers
         }
 
         [HttpPut("edit-product/{id}")]
-
         public async Task<IActionResult> EditProduct(int id, [FromBody] Product updatedProduct)
         {
             var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id);
 
-            if (product == null)
-            {
-                return NotFound();
-            }
+            if (product == null) return NotFound();
+
+            var cate = await _context.Categories.FirstOrDefaultAsync(c => c.CategoryId == updatedProduct.CategoryId);
+            if (cate == null) return NotFound();
 
             product.Title = updatedProduct.Title;
             product.Price = updatedProduct.Price;
-            product.Category = updatedProduct.Category;
+            product.CategoryId = updatedProduct.CategoryId;
             product.Detail = updatedProduct.Detail;
             product.Image = "http://localhost:13395/image/" + updatedProduct.Image;
 
@@ -103,6 +99,13 @@ namespace back_end.Controllers
             var products = _context.Products.ToList();
             return Ok(new { message = "success", products });
 
+        }
+
+        [HttpGet("get-orders")]
+        public async Task<IActionResult> GetOrders()
+        {
+            var orders = _context.OrderDetails.ToList();
+            return Ok(new { message = "success" });
         }
     }
 }

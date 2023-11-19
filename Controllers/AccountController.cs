@@ -1,6 +1,8 @@
 ﻿using back_end.Entities;
+using back_end.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -20,23 +22,32 @@ namespace back_end.Controllers
     public class AccountController : ControllerBase
     {
         public readonly web_apiContext _context;
-        IConfiguration config;
+        private readonly IConfiguration _config;
 
         public AccountController(web_apiContext ctx, IConfiguration config)
         {
             _context = ctx;
-            this.config = config;
-        }
-        [HttpGet]
-        public IActionResult GetAll()
-        {
-            return Ok(_context.Users.ToList());
+            _config = config;
         }
 
         [HttpGet("get-username")]
         public IActionResult GetUserName()
         {
-            return Ok(_context.Users.ToList());
+            string username = GetUserId();
+            if (username == "") return Ok();
+
+            return Ok(new { message = "success", username });
+        }
+
+        [HttpGet("get-items-cart")]
+        public async Task<IActionResult> GetItemCart()
+        {
+            string username = GetUserId();
+            if (username == "") return Ok();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            var result = _context.Carts.Where(c => c.UserId == user.UserId).Count();
+
+            return Ok(new { message = "success", result });
         }
 
         [HttpPost("register")]
@@ -44,10 +55,7 @@ namespace back_end.Controllers
         {
             // Kiểm tra valid của model (ví dụ: username, password, email không được rỗng)
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             if (string.IsNullOrEmpty(user.Password) || string.IsNullOrEmpty(user.Username))
             {
@@ -56,12 +64,8 @@ namespace back_end.Controllers
 
             bool checkUsername = _context.Users.Any(u => u.Username == user.Username);
 
-            if (checkUsername)
-            {
-                return BadRequest("Username has been registered");
-            }
+            if (checkUsername) return BadRequest("Username has been registered");
 
-            // Tạo một đối tượng Account từ model
             var account = new User
             {
                 Username = user.Username,
@@ -69,49 +73,38 @@ namespace back_end.Controllers
                 Password = BC.HashPassword(user.Password)
             };
 
-            // Lưu thông tin tài khoản vào cơ sở dữ liệu
             _context.Users.Add(account);
             await _context.SaveChangesAsync();
 
-            // Trả về kết quả thành công
-            return Ok(new { message = "Đăng ký thành công" });
+            return Ok(new { message = "success" });
         }
 
         [HttpPost("login")]
         public IActionResult Login([FromBody] User user)
         {
+            // Kiểm tra valid của model (ví dụ: username, password, email không được rỗng
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            // Kiểm tra valid của model (ví dụ: username, password, email không được rỗng)
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            // truy vấn cơ sở dữ liệu để kiểm tra thông tin đăng nhập
-            // đây là ví dụ đơn giản, bạn cần triển khai phương thức này theo cách thích hợp với ứng dụng của bạn
             var checkUser = _context.Users.SingleOrDefault(u => u.Username == user.Username);
+            if (checkUser == null) return NotFound();
 
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            var key = config["Jwt:Key"];
+            var key = _config["Jwt:Key"];
             var signinKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
             var signinCredential = new SigningCredentials(signinKey, SecurityAlgorithms.HmacSha256);
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
             };
+
             //tao token
             var tokenSetUp = new JwtSecurityToken(
-                issuer:config["Jwt:Issuer"],
-                audience:config["Jwt:Audience"],
+                issuer:_config["Jwt:Issuer"],
+                audience:_config["Jwt:Audience"],
                 expires:DateTime.Now.AddDays(2),
                 signingCredentials:signinCredential,
                 claims:claims
             );
+
             //sinh ra token với các thông số ở trên
             var accessToken = new JwtSecurityTokenHandler().WriteToken(tokenSetUp);
 
@@ -120,36 +113,71 @@ namespace back_end.Controllers
 
         }
 
-        //private bool authenticateuser(string username, string password)
-        //{
-            // truy vấn cơ sở dữ liệu để kiểm tra thông tin đăng nhập
-            // đây là ví dụ đơn giản, bạn cần triển khai phương thức này theo cách thích hợp với ứng dụng của bạn
-           // var user = _context.users.singleordefault(u => u.username == username);
-
-           // if (user == null)
-            //////{
-               /// return false; // không tìm thấy người dùng với tên người dùng đã nhập
-            //}
-
-            // kiểm tra mật khẩu
-          //  bool ispasswordvalid = comparepassword(password, user.password);
-
-            ////return ispasswordvalid;
-        //}
-
-        private string EncryptPassword(string password)
+        [HttpGet("purchase")]
+        public async Task<IActionResult> Purchase([FromQuery] string type)
         {
-            throw new NotImplementedException();
+            string username = GetUserId();
+            if (username == "") return Unauthorized();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            int userID = user.UserId;
+            string status = "";
+
+            if (type == "noted") status = "Chưa thanh toán";
+            else if (type == "cancelled") status = "Đã hủy";
+            else if (type == "complete") status = "Đã hoàn thành";
+
+            var result = _context.Orders
+                .Where(o => o.UserId == userID)
+                .Join(
+                      _context.OrderDetails,
+                      order => order.OrderId,
+                      orderDetail => orderDetail.OrderId,
+                      (order, orderDetail) => new { Order = order, OrderDetail = orderDetail }
+                )
+                .Where(combined => combined.OrderDetail.Status == status)
+                .Join(
+                      _context.Products,
+                      combined => combined.OrderDetail.ProductId,
+                      product => product.ProductId,
+                      (combined, product) => new
+                      {
+                         combined.OrderDetail.OrderDetailId,
+                         combined.OrderDetail.Quantity,
+                         combined.OrderDetail.Status,
+                         combined.OrderDetail.Total,
+                         title = product.Title,
+                         image = product.Image,
+                      }
+                )
+                .ToList();
+
+            return Ok(new { message = "success", result });
         }
 
-        private void SaveAccount(User account)
+        [HttpPost("order-cancel/{id}")]
+        public async Task<IActionResult> OrderCancel(int id)
         {
-            throw new NotImplementedException();
-        }
+            string username = GetUserId();
+            if (username == "") return Unauthorized();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            int userID = user.UserId;
 
-        private bool IsAccountExists(string userName)
+            var orderDetail = await _context.OrderDetails.FindAsync(id);
+            if (orderDetail != null) orderDetail.Status = "Đã hủy";
+            _context.Update(orderDetail);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "success" });
+        }
+        private string GetUserId()
         {
-            throw new NotImplementedException();
+            string token = HttpContext.Request.Headers["Authorization"];
+            token = token.Substring(7);
+            string secretKey = _config["Jwt:Key"];
+
+            if (token == "undefined") return "";
+
+            string username = VeryfiJWT.GetUsernameFromToken(token, secretKey);
+            return username;
         }
     }
 }

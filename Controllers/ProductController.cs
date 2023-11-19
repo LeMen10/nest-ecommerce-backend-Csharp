@@ -24,11 +24,16 @@ namespace back_end.Controllers
             _config = config;
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpGet("get-products")]
+        public IActionResult GetProduct([FromQuery] int page, [FromQuery] int limit)
         {
-            var products = _context.Products.ToList();
-            return Ok(new { message = "success", products });
+            int countSkip = (page - 1) * limit;
+            var products = _context.Products.OrderBy(x => 1).Skip(countSkip).Take(limit).ToList();
+
+            double count = _context.Products.Count();
+            var countProduct = Math.Ceiling(count / limit);
+
+            return Ok(new { message = "success", products, countProduct });
         }
 
 
