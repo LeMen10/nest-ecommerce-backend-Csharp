@@ -95,16 +95,13 @@ namespace back_end.Controllers
             }
             else
             {
-                //var query = $"UPDATE Carts SET Quantity = {quantity + cartOfUser.Quantity} WHERE CartID = {cartOfUser.CartId}";
-                //await _context.Database.ExecuteSqlRawAsync(query);
                 var query = await _context.Carts.FirstOrDefaultAsync(c => c.CartId == cartOfUser.CartId);
 
-                if (query != null)
-                {
-                    query.Quantity += quantity;
-                    _context.Carts.Update(query);
-                    await _context.SaveChangesAsync();
-                }
+                if (query == null) return NotFound();
+
+                query.Quantity += quantity;
+                _context.Carts.Update(query);
+                await _context.SaveChangesAsync();
 
                 int count = _context.Carts.Where(c => c.UserId == userID).Count();
 
@@ -173,6 +170,7 @@ namespace back_end.Controllers
                         product.Title, 
                         product.Price, 
                         product.Image 
+
                     }).ToList();
 
             return Ok(new { message = "success", carts, count });

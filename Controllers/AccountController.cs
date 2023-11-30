@@ -70,7 +70,8 @@ namespace back_end.Controllers
             {
                 Username = user.Username,
                 Email = user.Email,
-                Password = BC.HashPassword(user.Password)
+                Password = BC.HashPassword(user.Password),
+                Rule = "Người dùng"
             };
 
             _context.Users.Add(account);
@@ -122,9 +123,10 @@ namespace back_end.Controllers
             int userID = user.UserId;
             string status = "";
 
-            if (type == "noted") status = "Chưa thanh toán";
+            if (type == "noted") status = "Đang xử lý";
             else if (type == "cancelled") status = "Đã hủy";
-            else if (type == "complete") status = "Đã hoàn thành";
+            else if (type == "complete") status = "Hoàn thành";
+            else if (type == "delivering") status = "Đang giao hàng";
 
             var result = _context.Orders
                 .Where(o => o.UserId == userID)
@@ -142,6 +144,7 @@ namespace back_end.Controllers
                       (combined, product) => new
                       {
                          combined.OrderDetail.OrderDetailId,
+                         combined.OrderDetail.PaymentStatus,
                          combined.OrderDetail.Quantity,
                          combined.OrderDetail.Status,
                          combined.OrderDetail.Total,
@@ -163,11 +166,12 @@ namespace back_end.Controllers
             int userID = user.UserId;
 
             var orderDetail = await _context.OrderDetails.FindAsync(id);
-            if (orderDetail != null) orderDetail.Status = "Đã hủy";
+            if (orderDetail != null) orderDetail.Status = "Đã hủy"; orderDetail.PaymentStatus = null;
             _context.Update(orderDetail);
             await _context.SaveChangesAsync();
             return Ok(new { message = "success" });
         }
+
         private string GetUserId()
         {
             string token = HttpContext.Request.Headers["Authorization"];

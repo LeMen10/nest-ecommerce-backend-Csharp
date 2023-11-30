@@ -97,6 +97,28 @@ namespace back_end.Controllers
             return Ok(new { message = "success", result , countProduct});
         }
 
+        [HttpPost("product-checkout")]
+        public async Task<IActionResult> ProductCheckout([FromBody] int[] dataIds)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            string username = GetUserId();
+
+            if (username == "") return Unauthorized();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            int userID = user.UserId;
+
+            var carts = _context.Carts.Where(item => dataIds.Contains(item.CartId)).ToList();
+
+            var result = carts.Join(
+                _context.Products,
+                c => c.ProductId,
+                p => p.ProductId,
+                (c, p) => new { c.UserId, c.ProductId, c.CartId, c.Quantity, p.Title, p.Price, p.Image });
+
+            return Ok(new { message = "success", result });
+        }
+
         private string GetUserId()
         {
             string token = HttpContext.Request.Headers["Authorization"];

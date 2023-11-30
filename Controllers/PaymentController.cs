@@ -40,12 +40,10 @@ namespace back_end.Controllers
                 int userID = user.UserId;
 
                 string payment = order.Payment;
-                string fullName = order.FullName;
 
                 var newOrder = new Entities.Order
                 {
                     UserId = userID,
-                    FullName = fullName,
                     Payment = payment,
                 };
 

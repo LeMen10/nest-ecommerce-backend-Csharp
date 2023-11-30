@@ -20,7 +20,7 @@ namespace back_end.Entities
         public string Image { get; set; }
         public int ProductId { get; set; }
         public int CategoryId { get; set; }
-
+        public bool IsDeleted { get; set; }
 
         [JsonIgnore]
         public virtual Category Category { get; set; }

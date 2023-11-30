@@ -41,6 +41,8 @@ namespace back_end.Entities
             {
                 entity.Property(e => e.CartId).HasColumnName("CartID");
 
+                entity.Property(e => e.IsDeleted).HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.ProductId).HasColumnName("ProductID");
 
                 entity.Property(e => e.UserId).HasColumnName("UserID");
@@ -75,7 +77,7 @@ namespace back_end.Entities
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.FullName).HasMaxLength(50);
+                entity.Property(e => e.IsDeleted).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Payment).HasMaxLength(100);
 
@@ -92,6 +94,8 @@ namespace back_end.Entities
                 entity.ToTable("OrderDetail");
 
                 entity.Property(e => e.OrderDetailId).HasColumnName("OrderDetailID");
+
+                entity.Property(e => e.IsDeleted).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.OrderId).HasColumnName("OrderID");
 
@@ -141,7 +145,9 @@ namespace back_end.Entities
 
                 entity.Property(e => e.Email).HasMaxLength(50);
 
-                entity.Property(e => e.FullName).HasMaxLength(50);
+                entity.Property(e => e.FullName).HasMaxLength(200);
+
+                entity.Property(e => e.IsDeleted).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Password)
                     .IsRequired()

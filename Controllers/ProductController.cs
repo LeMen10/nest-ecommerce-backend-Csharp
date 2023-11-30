@@ -28,7 +28,8 @@ namespace back_end.Controllers
         public IActionResult GetProduct([FromQuery] int page, [FromQuery] int limit)
         {
             int countSkip = (page - 1) * limit;
-            var products = _context.Products.OrderBy(x => 1).Skip(countSkip).Take(limit).ToList();
+            var products = _context.Products.Where(p => p.IsDeleted != true)
+                .OrderBy(x => 1).Skip(countSkip).Take(limit).ToList();
 
             double count = _context.Products.Count();
             var countProduct = Math.Ceiling(count / limit);

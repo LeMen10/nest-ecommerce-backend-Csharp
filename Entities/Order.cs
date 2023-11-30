@@ -13,10 +13,10 @@ namespace back_end.Entities
         }
 
         public int? UserId { get; set; }
-        public string FullName { get; set; }
         public string Payment { get; set; }
         public int OrderId { get; set; }
-        public DateTime? CreateDate { get; set; }
+        public DateTime CreateDate { get; set; }
+        public bool? IsDeleted { get; set; }
 
         public virtual User User { get; set; }
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
