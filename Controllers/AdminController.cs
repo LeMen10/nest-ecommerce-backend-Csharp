@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BC = BCrypt.Net.BCrypt;
 
 namespace back_end.Controllers
 {
@@ -86,7 +87,7 @@ namespace back_end.Controllers
         }
 
         [HttpGet("find-product/{id}")]
-        public async Task<IActionResult> FindProduct(int id)
+        public IActionResult FindProduct(int id)
         {
             var product = _context.Products.Where(p => p.ProductId == id)
                 .Join(
@@ -121,8 +122,7 @@ namespace back_end.Controllers
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
 
-            var products = _context.Products.ToList();
-            return Ok(new { message = "success", products });
+            return Ok(new { message = "success" });
         }
 
         [HttpGet("trash-products")]
@@ -173,6 +173,40 @@ namespace back_end.Controllers
             var count = _context.Products.Where(u => u.IsDeleted == true).Count();
 
             return Ok(new { message = "success", count });
+        }
+
+        [HttpDelete("delete-multiple-products")]
+        public async Task<IActionResult> DeleteMultipleProducts([FromBody] int[] dataIds)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var products = _context.Products.Where(item => dataIds.Contains(item.ProductId)).ToList();
+
+            foreach( var product in products)
+            {
+                product.IsDeleted = true;
+            };
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "success" });
+        }
+
+        [HttpPut("restore-multiple-products")]
+        public async Task<IActionResult> RestoreMultipleProduct([FromBody] int[] dataIds)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var products = _context.Products.Where(item => dataIds.Contains(item.ProductId)).ToList();
+
+            foreach (var product in products)
+            {
+                product.IsDeleted = false;
+            };
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "success" });
         }
 
 
@@ -248,18 +282,101 @@ namespace back_end.Controllers
             return Ok(new { message = "success", all, processing, delivering, complete });
         }
 
+        [HttpGet("order-statistics")]
+        public IActionResult OrderStatistics()
+        {
+            List<int> allMonths = Enumerable.Range(1, 12).ToList();
+
+            // Lấy số lượng chi tiết đơn hàng theo từng tháng từ cơ sở dữ liệu
+            var orderDetailCounts = _context.OrderDetails
+                .Where(od => od.Order.CreateDate.Year == 2023) // Thay 2023 bằng năm bạn quan tâm
+                .GroupBy(od => new { od.Order.CreateDate.Year, od.Order.CreateDate.Month })
+                .Select(group => new
+                {
+                    Year = group.Key.Year,
+                    Month = group.Key.Month,
+                    OrderDetailCount = group.Count()
+                })
+                .OrderBy(result => result.Year)
+                .ThenBy(result => result.Month)
+                .ToList();
+
+            // Tạo mảng để lưu trữ thông tin
+            List<int> months = new();
+            List<int> orderDetailCountsPerMonth = new();
+
+            foreach (var month in allMonths)
+            {
+                // Kiểm tra xem tháng có trong kết quả từ cơ sở dữ liệu không
+                var resultForMonth = orderDetailCounts.FirstOrDefault(x => x.Month == month);
+
+                // Nếu tháng không có trong kết quả, thì số lượng chi tiết đơn hàng là 0
+                int orderDetailCount = resultForMonth?.OrderDetailCount ?? 0;
+
+                // Thêm thông tin vào mảng
+                months.Add(month);
+                orderDetailCountsPerMonth.Add(orderDetailCount);
+
+                Console.WriteLine($"Month: {month}, Order Detail Count: {orderDetailCount}");
+            }
+
+            // Sử dụng mảng months và orderDetailCountsPerMonth theo nhu cầu của bạn.
+
+            return Ok(new { message = "success", months, orderDetailCountsPerMonth });
+}
+
+
 
 
         [HttpGet("get-users")]
         public IActionResult GetUsers([FromQuery] int page, [FromQuery] int limit)
         {
             int countSkip = (page - 1) * limit;
-            var users = _context.Users.Where(u => u.IsDeleted != true).OrderBy(x => 1).Skip(countSkip).Take(limit).ToList();
+            var users = _context.Users.Where(u => u.IsDeleted == false).OrderBy(x => 1).Skip(countSkip).Take(limit).ToList();
 
             double count = _context.Users.Count();
-            var countProduct = Math.Ceiling(count / limit);
+            var countUser = Math.Ceiling(count / limit);
 
-            return Ok(new { message = "success", users });
+            return Ok(new { message = "success", users, countUser });
+        }
+
+        [HttpPost("add-user")]
+        public async Task<IActionResult> AddUser([FromBody] User user)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            bool checkUsername = _context.Users.Any(u => u.Username == user.Username);
+
+            if (checkUsername) return BadRequest("Username has been registered");
+
+            var addUser = new User
+            {
+                Username = user.Username,
+                Phone = user.Phone,
+                Email = user.Email,
+                Rule = user.Rule,
+                Password = BC.HashPassword(user.Password),
+                FullName = user.FullName,
+                City = user.City,
+                District = user.District,
+                Ward = user.Ward,
+                SpecificAddress = user.SpecificAddress
+            };
+
+            _context.Users.Add(addUser);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "success" });
+        }
+
+        [HttpGet("find-user/{id}")]
+        public IActionResult FindUser(int id)
+        {
+            var user = _context.Users.Where(u => u.UserId == id).ToList();
+
+            if (user == null) return NotFound();
+
+            return Ok(new { message = "success", user });
         }
 
         [HttpPut("restore-user/{id}")]
@@ -278,6 +395,30 @@ namespace back_end.Controllers
             return Ok(new { message = "success", users });
         }
 
+        [HttpPut("edit-user/{id}")]
+        public async Task<IActionResult> EditUser(int id, [FromBody] User updatedUser)
+        {
+            var findUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id);
+
+            if (findUser == null) return NotFound();
+
+
+            findUser.Username = updatedUser.Username;
+            findUser.FullName = updatedUser.FullName;
+            findUser.Phone = updatedUser.Phone;
+            findUser.Email = updatedUser.Email;
+            findUser.Rule = updatedUser.Rule;
+            findUser.City = updatedUser.City;
+            findUser.District = updatedUser.District;
+            findUser.Ward = updatedUser.Ward;
+            findUser.SpecificAddress = updatedUser.SpecificAddress;
+            
+            _context.Users.Update(findUser);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "success" });
+        }
+
         [HttpDelete("delete-user/{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
@@ -286,6 +427,39 @@ namespace back_end.Controllers
             if (user == null) return NotFound();
 
             user.IsDeleted = true;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "success" });
+        }
+
+        [HttpDelete("delete-multiple-users")]
+        public async Task<IActionResult> DeleteMultipleUsers([FromBody] int[] dataIds)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var users = _context.Users.Where(item => dataIds.Contains(item.UserId)).ToList();
+
+            foreach (var user in users)
+            {
+                user.IsDeleted = true;
+            };
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "success" });
+        }
+
+        [HttpPut("restore-multiple-users")]
+        public async Task<IActionResult> RestoreMultipleUser([FromBody] int[] dataIds)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var users = _context.Users.Where(item => dataIds.Contains(item.UserId)).ToList();
+
+            foreach (var user in users)
+            {
+                user.IsDeleted = false;
+            };
+
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "success" });
