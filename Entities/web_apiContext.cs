@@ -155,7 +155,7 @@ namespace back_end.Entities
 
                 entity.Property(e => e.Phone).HasMaxLength(10);
 
-                entity.Property(e => e.Rule).HasMaxLength(20);
+                entity.Property(e => e.Role).HasMaxLength(20);
 
                 entity.Property(e => e.SpecificAddress).HasMaxLength(500);
 

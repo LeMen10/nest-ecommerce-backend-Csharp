@@ -71,7 +71,7 @@ namespace back_end.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 Password = BC.HashPassword(user.Password),
-                Rule = "Người dùng"
+                Role = "Người dùng"
             };
 
             _context.Users.Add(account);
@@ -94,14 +94,15 @@ namespace back_end.Controllers
             var signinCredential = new SigningCredentials(signinKey, SecurityAlgorithms.HmacSha256);
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, checkUser.Username),
+                new Claim(ClaimTypes.Role, checkUser.Role),
             };
 
             //tao token
             var tokenSetUp = new JwtSecurityToken(
                 issuer:_config["Jwt:Issuer"],
                 audience:_config["Jwt:Audience"],
-                expires:DateTime.Now.AddDays(2),
+                expires:DateTime.Now.AddDays(1),
                 signingCredentials:signinCredential,
                 claims:claims
             );

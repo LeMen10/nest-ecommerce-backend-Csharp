@@ -36,10 +36,35 @@ namespace back_end.Service
             SecurityToken validatedToken;
             var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out validatedToken);
 
-            // Lấy giá trị username từ token
             string username = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
             return username;
+        }
+
+        public static string GetRoleFromToken(string token, string secretKey)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+
+            if (jwtToken == null)
+            {
+                throw new UnauthorizedAccessException("Invalid token");
+            }
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+                ValidateIssuer = false,
+                ValidateAudience = false
+            };
+
+            SecurityToken validatedToken;
+            var claimsPrincipal = tokenHandler.ValidateToken(token, tokenValidationParameters, out validatedToken);
+
+            string rule = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+
+            return rule;
         }
     }
 }

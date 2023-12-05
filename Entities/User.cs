@@ -17,7 +17,7 @@ namespace back_end.Entities
         public string Password { get; set; }
         public string Email { get; set; }
         public string Phone { get; set; }
-        public string Rule { get; set; }
+        public string Role { get; set; }
         public int UserId { get; set; }
         public string City { get; set; }
         public string District { get; set; }
