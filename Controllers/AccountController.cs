@@ -131,6 +131,7 @@ namespace back_end.Controllers
 
             var result = _context.Orders
                 .Where(o => o.UserId == userID)
+                .OrderByDescending(o => o.CreateDate)
                 .Join(
                       _context.OrderDetails,
                       order => order.OrderId,
