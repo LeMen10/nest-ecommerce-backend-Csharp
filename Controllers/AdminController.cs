@@ -33,7 +33,7 @@ namespace back_end.Controllers
         public IActionResult GetProduct([FromQuery] int page, [FromQuery] int limit)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             int countSkip = (page - 1) * limit;
             var products = _context.Products.Where(p => p.IsDeleted != true)
@@ -62,7 +62,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> AddProduct([FromBody] Product product)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var addProduct = new Product
@@ -90,7 +90,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> DeleteProduct(int id)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var product = await _context.Products.FindAsync(id);
 
@@ -106,7 +106,7 @@ namespace back_end.Controllers
         public IActionResult FindProduct(int id)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var product = _context.Products.Where(p => p.ProductId == id)
                 .Join(
@@ -125,7 +125,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> EditProduct(int id, [FromBody] Product updatedProduct)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id);
 
@@ -151,7 +151,7 @@ namespace back_end.Controllers
         public IActionResult TrashProduct([FromQuery] int page, [FromQuery] int limit)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
             var query = _context.Products
                 .Where(p => p.IsDeleted != false)
                 .Join(
@@ -181,7 +181,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> RestoreProduct(int id)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductId == id);
 
@@ -198,7 +198,7 @@ namespace back_end.Controllers
         public IActionResult GetNumberProductDeleted()
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var count = _context.Products.Where(u => u.IsDeleted == true).Count();
 
@@ -209,7 +209,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> DeleteMultipleProducts([FromBody] int[] dataIds)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -229,7 +229,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> RestoreMultipleProduct([FromBody] int[] dataIds)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -250,7 +250,7 @@ namespace back_end.Controllers
         public IActionResult GetOrders([FromQuery] int page, [FromQuery] int limit)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var query = _context.Orders
                 .Join(
@@ -299,7 +299,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> UpdateStatusOrder(int orderDetailId, [FromBody] OrderDetail orderDetail)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var query = await _context.OrderDetails.FirstOrDefaultAsync(or => or.OrderDetailId == orderDetailId);
 
@@ -318,7 +318,7 @@ namespace back_end.Controllers
         public IActionResult GetNumberOrder()
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var all = _context.OrderDetails.Count();
             var processing = _context.OrderDetails.Where(or => or.Status == "Đang xử lý").Count();
@@ -331,7 +331,7 @@ namespace back_end.Controllers
         public IActionResult OrderStatistics()
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             List<int> allMonths = Enumerable.Range(1, 12).ToList();
 
@@ -348,6 +348,7 @@ namespace back_end.Controllers
                 .OrderBy(result => result.Year)
                 .ThenBy(result => result.Month)
                 .ToList();
+
 
             // Tạo mảng để lưu trữ thông tin
             List<int> months = new();
@@ -377,7 +378,7 @@ namespace back_end.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var checkUser = _context.Users.SingleOrDefault(u => u.Username == user.Username);
-            if (checkUser == null || !string.Equals(checkUser.Role, "Quản trị viên", StringComparison.OrdinalIgnoreCase)) return NotFound();
+            if (checkUser == null || !string.Equals(checkUser.Role, "admin", StringComparison.OrdinalIgnoreCase)) return NotFound();
 
             var key = _config["Jwt:Key"];
             var signinKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
@@ -408,7 +409,7 @@ namespace back_end.Controllers
         public IActionResult GetUsers([FromQuery] int page, [FromQuery] int limit)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             int countSkip = (page - 1) * limit;
             var users = _context.Users.Where(u => u.IsDeleted == false).OrderBy(x => 1).Skip(countSkip).Take(limit).ToList();
@@ -423,7 +424,7 @@ namespace back_end.Controllers
         public IActionResult FindUser(int id)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var user = _context.Users.Where(u => u.UserId == id).ToList();
             if (user == null) return NotFound();
@@ -435,7 +436,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> RestoreUser(int id)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id);
 
@@ -453,7 +454,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> EditUser(int id, [FromBody] User updatedUser)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var findUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == id);
 
@@ -480,7 +481,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> DeleteUser(int id)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var user = await _context.Users.FindAsync(id);
 
@@ -496,7 +497,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> DeleteMultipleUsers([FromBody] int[] dataIds)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -515,7 +516,7 @@ namespace back_end.Controllers
         public async Task<IActionResult> RestoreMultipleUser([FromBody] int[] dataIds)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -535,7 +536,7 @@ namespace back_end.Controllers
         public IActionResult TrashUsers([FromQuery] int page, [FromQuery] int limit)
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var query = _context.Users.Where(p => p.IsDeleted == true).ToList();
 
@@ -552,7 +553,7 @@ namespace back_end.Controllers
         public IActionResult GetNumberUserDeleted()
         {
             string role = GetUserRole();
-            if (role == "" || role != "Quản trị viên") return Unauthorized();
+            if (role == "" || role != "admin") return Unauthorized();
 
             var count = _context.Users.Where(u => u.IsDeleted == true).Count();
 

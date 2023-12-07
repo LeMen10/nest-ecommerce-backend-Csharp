@@ -69,17 +69,9 @@ namespace back_end.Controllers
         }
 
         [HttpPost("search")]
-        public async Task<IActionResult> SearchProduct([FromQuery] string query, [FromQuery] int page, [FromQuery] int limit)
+        public IActionResult SearchProduct([FromQuery] string query, [FromQuery] int page, [FromQuery] int limit)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            string username = GetUserId();
-
-            if (username == "") return Unauthorized();
-            var userResult = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            int userID = userResult.UserId;
-
-            if (userResult == null) return NotFound();
 
             int countSkip = (page - 1) * limit;
 
@@ -109,6 +101,7 @@ namespace back_end.Controllers
             int userID = user.UserId;
 
             var carts = _context.Carts.Where(item => dataIds.Contains(item.CartId)).ToList();
+            if (carts == null) return NotFound();
 
             var result = carts.Join(
                 _context.Products,
