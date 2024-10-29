@@ -21,6 +21,7 @@ namespace back_end.Entities
         public int ProductId { get; set; }
         public int CategoryId { get; set; }
         public bool IsDeleted { get; set; }
+        public int? Stock { get; set; }
 
         [JsonIgnore]
         public virtual Category Category { get; set; }

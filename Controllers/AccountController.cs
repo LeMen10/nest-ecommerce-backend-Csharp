@@ -71,7 +71,7 @@ namespace back_end.Controllers
                 Username = user.Username,
                 Email = user.Email,
                 Password = BC.HashPassword(user.Password),
-                Role = "Người dùng"
+                Role = "customer"
             };
 
             _context.Users.Add(account);

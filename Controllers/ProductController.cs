@@ -24,6 +24,13 @@ namespace back_end.Controllers
             _config = config;
         }
 
+        [HttpGet("get-productss")]
+        public IActionResult GetProducts()
+        {
+            var products = _context.Products.Where(p => p.IsDeleted != true).ToList();
+            return Ok(new { message = "success", products });
+        }
+
         [HttpGet("get-products")]
         public IActionResult GetProduct([FromQuery] int page, [FromQuery] int limit)
         {
@@ -43,11 +50,7 @@ namespace back_end.Controllers
         {
             var product = await _context.Products.FindAsync(id);
 
-            if (product == null)
-            {
-                return NotFound();
-            }
-
+            if (product == null) return NotFound();
             return Ok(new { message = "success", product });
         }
     }

@@ -110,7 +110,7 @@ namespace back_end.Controllers
         }
 
         [HttpPost("update-quantity")]
-        public async Task<IActionResult> UpdateQuantity([FromBody] Cart cart)
+        public async Task<IActionResult> UpdateQuantity([FromBody] Cart cart)       
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 

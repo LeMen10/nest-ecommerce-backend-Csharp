@@ -74,7 +74,7 @@ namespace back_end.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             int countSkip = (page - 1) * limit;
-
+                
             var queryResult = _context.Products.Where(p => p.Title.Contains(query));
 
             double countProduct = queryResult.Count();
@@ -134,7 +134,7 @@ namespace back_end.Controllers
                 };
 
                 _context.Orders.Add(newOrder);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
                 int OrderId = newOrder.OrderId;
 
@@ -151,14 +151,15 @@ namespace back_end.Controllers
                     });
 
                     _context.OrderDetails.AddRange(orderDetails);
-                    _context.SaveChanges();
+                    await _context.SaveChangesAsync();
                 }
 
                 return Ok(new { message = "success", OrderId });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = $"Error: {ex.Message}" });
+                var innerException = ex.InnerException?.Message ?? ex.Message;
+                return BadRequest(new { message = $"Error: {innerException}" });
             }
 
         }
