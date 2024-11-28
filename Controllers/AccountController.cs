@@ -175,6 +175,25 @@ namespace back_end.Controllers
             return Ok(new { message = "success" });
         }
 
+        [HttpPost("find-user-by-username")]
+        public async Task<IActionResult> FindUserByUsername([FromBody] User user)
+        {
+            var userFind = await _context.Users.FirstOrDefaultAsync(u => u.Username == user.Username);
+            if (user == null) return BadRequest(new { success = false, message = "User not found" });
+
+            return Ok(new { message = "success", user });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] User user)
+        {
+            var userFind = await _context.Users.FirstOrDefaultAsync(u => u.Username == user.Username);
+            if (user == null) return BadRequest(new { success = false, message = "User not found" });
+            user.Password = BC.HashPassword(user.Password);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "success" });
+        }
+
         private string GetUserId()
         {
             string token = HttpContext.Request.Headers["Authorization"];
