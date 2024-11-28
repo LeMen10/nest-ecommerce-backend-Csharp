@@ -36,7 +36,7 @@ namespace back_end.Controllers
             if (role == "" || role != "admin") return Unauthorized();
 
             int countSkip = (page - 1) * limit;
-            var products = _context.Products.Where(p => p.IsDeleted != true)
+            var products = _context.Products.Where(product => product.IsDeleted != true)
                 .Join(
                     _context.Categories,
                     product => product.CategoryId,
@@ -52,7 +52,7 @@ namespace back_end.Controllers
                 .Select(p => new { p.Title, p.Image, p.Price, p.ProductId, p.Cate })
                 .Skip(countSkip).Take(limit).ToList();
 
-            double count = _context.Products.Count();
+            double count = _context.Products.Count(product => !product.IsDeleted);
             var countProduct = Math.Ceiling(count / limit);
 
             return Ok(new { message = "success", products, countProduct });
@@ -322,7 +322,7 @@ namespace back_end.Controllers
 
             var all = _context.OrderDetails.Count();
             var processing = _context.OrderDetails.Where(or => or.Status == "Đang xử lý").Count();
-            var delivering = _context.OrderDetails.Where(or => or.Status == "Đang giao hàng").Count();
+            var delivering = _context.OrderDetails.Where(or => or.Status == "Đang giao").Count();
             var complete = _context.OrderDetails.Where(or => or.Status == "Hoàn thành").Count();
             return Ok(new { message = "success", all, processing, delivering, complete });
         }

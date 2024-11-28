@@ -127,7 +127,7 @@ namespace back_end.Controllers
             if (type == "noted") status = "Đang xử lý";
             else if (type == "cancelled") status = "Đã hủy";
             else if (type == "complete") status = "Hoàn thành";
-            else if (type == "delivering") status = "Đang giao hàng";
+            else if (type == "delivering") status = "Đang giao";
 
             var result = _context.Orders
                 .Where(o => o.UserId == userID)
@@ -152,6 +152,7 @@ namespace back_end.Controllers
                          combined.OrderDetail.Total,
                          title = product.Title,
                          image = product.Image,
+                         productId = product.ProductId
                       }
                 )
                 .ToList();
