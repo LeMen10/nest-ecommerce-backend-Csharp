@@ -337,7 +337,7 @@ namespace back_end.Controllers
 
             // Lấy số lượng chi tiết đơn hàng theo từng tháng từ cơ sở dữ liệu
             var orderDetailCounts = _context.OrderDetails
-                .Where(od => od.Order.CreateDate.Year == 2023) // Thay 2023 bằng năm bạn quan tâm
+                .Where(od => od.Order.CreateDate.Year == 2024)
                 .GroupBy(od => new { od.Order.CreateDate.Year, od.Order.CreateDate.Month })
                 .Select(group => new
                 {
