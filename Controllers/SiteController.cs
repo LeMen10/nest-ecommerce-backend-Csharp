@@ -164,6 +164,34 @@ namespace back_end.Controllers
 
         }
 
+        [HttpPost("update-payment-status")]
+        public async Task<IActionResult> UpdatePaymentStatus([FromQuery] int orderID, [FromQuery] string paymentStatus)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try {
+                var orderDetails = await _context.OrderDetails
+                    .Where(od => od.OrderId == orderID)
+                    .ToListAsync();
+
+                if (orderDetails == null || !orderDetails.Any()){
+                    return NotFound(new { message = "Không tìm thấy OrderDetails" });
+                }
+
+                foreach (var orderDetail in orderDetails){
+                    orderDetail.PaymentStatus = paymentStatus;
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "success" });
+            }
+            catch (Exception ex)
+            {
+                var innerException = ex.InnerException?.Message ?? ex.Message;
+                return BadRequest(new { message = $"Error: {innerException}" });
+            }
+        }
+
         private string GetUserId()
         {
             string token = HttpContext.Request.Headers["Authorization"];
